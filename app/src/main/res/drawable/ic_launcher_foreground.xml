@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A rounded "V" with a heart-shaped spark, kept inside the 72dp adaptive icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M38,40 L54,70 L70,40"
+        android:strokeWidth="9"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M74,30.5c-1.2,-2.2 -4.6,-2.4 -5.9,0 -1.4,2.4 0.4,4.5 5.9,8.5 5.5,-4 7.3,-6.1 5.9,-8.5 -1.3,-2.4 -4.7,-2.2 -5.9,0z" />
+</vector>

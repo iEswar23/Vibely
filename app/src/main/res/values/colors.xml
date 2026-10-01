@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_violet">#FF7C3AED</color>
+    <color name="brand_pink">#FFEC4899</color>
+    <color name="window_background">#FFFAFAFC</color>
+    <color name="window_background_dark">#FF0C0C11</color>
+    <color name="splash_background">#FF7C3AED</color>
+</resources>

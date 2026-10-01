@@ -1,0 +1,295 @@
+[
+ {
+  "id": "s01",
+  "userId": "u01",
+  "createdAt": "@ago:665m",
+  "frames": [
+   {
+    "emoji": "🚂",
+    "gradient": "peach",
+    "text": "Next stop: Ooty"
+   },
+   {
+    "emoji": "🏔️",
+    "gradient": "midnight",
+    "text": "Day 3 of the trek"
+   }
+  ]
+ },
+ {
+  "id": "s02",
+  "userId": "u05",
+  "createdAt": "@ago:1127m",
+  "frames": [
+   {
+    "emoji": "🎧",
+    "gradient": "berry",
+    "text": "Tonight's set list"
+   },
+   {
+    "emoji": "🎤",
+    "gradient": "candy",
+    "text": "Soundcheck"
+   },
+   {
+    "emoji": "🎶",
+    "gradient": "violet",
+    "text": "New song teaser"
+   }
+  ]
+ },
+ {
+  "id": "s03",
+  "userId": "u03",
+  "createdAt": "@ago:100m",
+  "frames": [
+   {
+    "emoji": "🥐",
+    "gradient": "rose",
+    "text": "Fresh out of the oven"
+   },
+   {
+    "emoji": "🍜",
+    "gradient": "ember",
+    "text": "Ramen Friday!"
+   },
+   {
+    "emoji": "🍳",
+    "gradient": "mango",
+    "text": "Breakfast sorted"
+   },
+   {
+    "emoji": "☕",
+    "gradient": "forest",
+    "text": "Coffee #3 today"
+   }
+  ]
+ },
+ {
+  "id": "s04",
+  "userId": "u10",
+  "createdAt": "@ago:840m",
+  "frames": [
+   {
+    "emoji": "🗺️",
+    "gradient": "sky",
+    "text": "Guess where I am?"
+   },
+   {
+    "emoji": "🚂",
+    "gradient": "peach",
+    "text": "Next stop: Ooty"
+   }
+  ]
+ },
+ {
+  "id": "s05",
+  "userId": "u12",
+  "createdAt": "@ago:184m",
+  "frames": [
+   {
+    "emoji": "🎤",
+    "gradient": "candy",
+    "text": "Soundcheck"
+   },
+   {
+    "emoji": "🎶",
+    "gradient": "violet",
+    "text": "New song teaser"
+   },
+   {
+    "emoji": "🎧",
+    "gradient": "berry",
+    "text": "Tonight's set list"
+   }
+  ]
+ },
+ {
+  "id": "s06",
+  "userId": "u07",
+  "createdAt": "@ago:30m",
+  "frames": [
+   {
+    "emoji": "☕",
+    "gradient": "forest",
+    "text": "Coffee #3 today"
+   },
+   {
+    "emoji": "🥐",
+    "gradient": "rose",
+    "text": "Fresh out of the oven"
+   }
+  ]
+ },
+ {
+  "id": "s07",
+  "userId": "u18",
+  "createdAt": "@ago:299m",
+  "frames": [
+   {
+    "emoji": "🌅",
+    "gradient": "sunset",
+    "text": "Sunrise run done"
+   },
+   {
+    "emoji": "🏔️",
+    "gradient": "midnight",
+    "text": "Day 3 of the trek"
+   }
+  ]
+ },
+ {
+  "id": "s08",
+  "userId": "u02",
+  "createdAt": "@ago:1167m",
+  "frames": [
+   {
+    "emoji": "🏋️",
+    "gradient": "berry",
+    "text": "Leg day ✅"
+   },
+   {
+    "emoji": "💧",
+    "gradient": "sky",
+    "text": "3L water challenge"
+   },
+   {
+    "emoji": "🧘",
+    "gradient": "ocean",
+    "text": "Morning stretch"
+   }
+  ]
+ },
+ {
+  "id": "s09",
+  "userId": "u13",
+  "createdAt": "@ago:270m",
+  "frames": [
+   {
+    "emoji": "🏔️",
+    "gradient": "midnight",
+    "text": "Day 3 of the trek"
+   },
+   {
+    "emoji": "🗺️",
+    "gradient": "sky",
+    "text": "Guess where I am?"
+   },
+   {
+    "emoji": "🚂",
+    "gradient": "peach",
+    "text": "Next stop: Ooty"
+   },
+   {
+    "emoji": "🌅",
+    "gradient": "sunset",
+    "text": "Sunrise run done"
+   }
+  ]
+ },
+ {
+  "id": "s10",
+  "userId": "u09",
+  "createdAt": "@ago:360m",
+  "frames": [
+   {
+    "emoji": "🏃",
+    "gradient": "aurora",
+    "text": "10K in 48:20"
+   },
+   {
+    "emoji": "🧘",
+    "gradient": "ocean",
+    "text": "Morning stretch"
+   },
+   {
+    "emoji": "🏋️",
+    "gradient": "berry",
+    "text": "Leg day ✅"
+   },
+   {
+    "emoji": "💧",
+    "gradient": "sky",
+    "text": "3L water challenge"
+   }
+  ]
+ },
+ {
+  "id": "s11",
+  "userId": "u04",
+  "createdAt": "@ago:507m",
+  "frames": [
+   {
+    "emoji": "⌨️",
+    "gradient": "peach",
+    "text": "Keyboard ASMR"
+   },
+   {
+    "emoji": "📱",
+    "gradient": "violet",
+    "text": "New feature preview"
+   },
+   {
+    "emoji": "🐛",
+    "gradient": "ember",
+    "text": "Found the bug!"
+   },
+   {
+    "emoji": "💻",
+    "gradient": "midnight",
+    "text": "Shipping v2.0 today"
+   }
+  ]
+ },
+ {
+  "id": "s12",
+  "userId": "u21",
+  "createdAt": "@ago:1098m",
+  "frames": [
+   {
+    "emoji": "🥐",
+    "gradient": "rose",
+    "text": "Fresh out of the oven"
+   },
+   {
+    "emoji": "☕",
+    "gradient": "forest",
+    "text": "Coffee #3 today"
+   }
+  ]
+ },
+ {
+  "id": "s13",
+  "userId": "u08",
+  "createdAt": "@ago:622m",
+  "frames": [
+   {
+    "emoji": "🏏",
+    "gradient": "forest",
+    "text": "Match day!"
+   },
+   {
+    "emoji": "☔",
+    "gradient": "berry",
+    "text": "Rain delay again"
+   }
+  ]
+ },
+ {
+  "id": "s14",
+  "userId": "u25",
+  "createdAt": "@ago:761m",
+  "frames": [
+   {
+    "emoji": "🏔️",
+    "gradient": "midnight",
+    "text": "Day 3 of the trek"
+   },
+   {
+    "emoji": "🗺️",
+    "gradient": "sky",
+    "text": "Guess where I am?"
+   }
+  ]
+ }
+]
