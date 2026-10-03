@@ -20,6 +20,7 @@ class MockInterceptorTest {
             """{"id":"p$i","authorId":"u${i % 2}","type":"CANVAS","caption":"Post $i","likeCount":$i,"createdAt":"@ago:${i * 10}m"}"""
         },
         "users.json" to """[{"id":"u0","name":"A","username":"a"},{"id":"u1","name":"B","username":"b"}]""",
+        "stories.json" to """[{"id":"s1","userId":"u0","createdAt":"@ago:5m","pollEndsAt":"@in:90m"}]""",
     )
 
     private val client = OkHttpClient.Builder()
@@ -58,6 +59,44 @@ class MockInterceptorTest {
         assertThat(created["authorId"].asString).isEqualTo(MockInterceptor.CURRENT_USER_ID)
         assertThat(created["createdAt"].asLong).isEqualTo(now)
         assertThat(created["caption"].asString).isEqualTo("Hello #vibely")
+    }
+
+    @Test
+    fun `future fixture timestamps are rendered ahead of the clock`() {
+        val story = JsonParser.parseString(get("stories").body!!.string()).asJsonArray[0].asJsonObject
+
+        assertThat(story["createdAt"].asLong).isEqualTo(now - 5 * 60_000L)
+        assertThat(story["pollEndsAt"].asLong).isEqualTo(now + 90 * 60_000L)
+    }
+
+    @Test
+    fun `creating a poll post returns the poll in the server shape`() {
+        val request = Request.Builder()
+            .url("https://api.vibely.app/v1/posts")
+            .post(
+                """{"type":"POLL","caption":"","poll":{"question":"Tabs or spaces?","options":["Tabs","Spaces"],"durationDays":3}}"""
+                    .toRequestBody("application/json".toMediaType()),
+            )
+            .build()
+
+        val poll = JsonParser.parseString(client.newCall(request).execute().body!!.string()).asJsonObject["poll"].asJsonObject
+
+        assertThat(poll["question"].asString).isEqualTo("Tabs or spaces?")
+        assertThat(poll["options"].asJsonArray.map { it.asJsonObject["text"].asString }).containsExactly("Tabs", "Spaces").inOrder()
+        assertThat(poll["options"].asJsonArray.map { it.asJsonObject["votes"].asInt }).containsExactly(0, 0)
+        assertThat(poll["endsAt"].asLong).isEqualTo(now + 3 * 24 * 60 * 60_000L)
+    }
+
+    @Test
+    fun `voting in a poll succeeds`() {
+        val request = Request.Builder()
+            .url("https://api.vibely.app/v1/posts/p1/vote")
+            .post("""{"optionIndex":1}""".toRequestBody("application/json".toMediaType()))
+            .build()
+
+        val body = JsonParser.parseString(client.newCall(request).execute().body!!.string()).asJsonObject
+
+        assertThat(body["success"].asBoolean).isTrue()
     }
 
     @Test

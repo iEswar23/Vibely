@@ -44,7 +44,7 @@ fun PostGridTile(post: Post, onClick: (Post) -> Unit, modifier: Modifier = Modif
             type = post.type,
             gradientKey = post.gradientKey,
             emoji = post.emoji,
-            caption = post.caption,
+            caption = post.poll?.question ?: post.caption,
             modifier = Modifier.fillMaxSize(),
         )
         if (showLikes) {
@@ -57,14 +57,14 @@ fun PostGridTile(post: Post, onClick: (Post) -> Unit, modifier: Modifier = Modif
                 Icon(
                     Icons.Rounded.Favorite,
                     contentDescription = null,
-                    tint = if (post.type == io.github.ieswar23.vibely.domain.model.PostType.TEXT) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
+                    tint = if (post.type != io.github.ieswar23.vibely.domain.model.PostType.CANVAS) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
                     modifier = Modifier.size(12.dp),
                 )
                 Spacer(Modifier.width(3.dp))
                 Text(
                     text = CountFormatter.compact(post.likeCount),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (post.type == io.github.ieswar23.vibely.domain.model.PostType.TEXT) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
+                    color = if (post.type != io.github.ieswar23.vibely.domain.model.PostType.CANVAS) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
                 )
             }
         }

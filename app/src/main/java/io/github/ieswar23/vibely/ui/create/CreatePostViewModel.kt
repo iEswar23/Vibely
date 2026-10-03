@@ -6,6 +6,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.ieswar23.vibely.data.repository.PostRepository
 import io.github.ieswar23.vibely.domain.DraftValidation
 import io.github.ieswar23.vibely.domain.PostDraftValidator
+import io.github.ieswar23.vibely.domain.model.PollDraft
+import io.github.ieswar23.vibely.domain.model.PollDuration
 import io.github.ieswar23.vibely.domain.model.PostDraft
 import io.github.ieswar23.vibely.domain.model.PostType
 import io.github.ieswar23.vibely.util.TextTokenParser
@@ -26,6 +28,10 @@ data class CreatePostUiState(
     val headline: String = "",
     val caption: String = "",
     val location: String = "",
+    val pollQuestion: String = "",
+    /** Starts with the minimum two empty options; more can be added up to the limit. */
+    val pollOptions: List<String> = List(PostDraftValidator.MIN_POLL_OPTIONS) { "" },
+    val pollDuration: PollDuration = PollDuration.ONE_DAY,
     val isPublishing: Boolean = false,
     /** Errors are only surfaced after the first publish attempt to avoid shouting at a blank form. */
     val showErrors: Boolean = false,
@@ -33,7 +39,14 @@ data class CreatePostUiState(
 ) {
     val captionLength: Int get() = caption.trim().length
     val hashtagCount: Int get() = TextTokenParser.hashtags(caption).size
-    val canPublish: Boolean get() = !isPublishing && (type == PostType.CANVAS || caption.isNotBlank())
+    val canPublish: Boolean
+        get() = !isPublishing && when (type) {
+            PostType.CANVAS -> true
+            PostType.TEXT -> caption.isNotBlank()
+            PostType.POLL -> pollQuestion.isNotBlank()
+        }
+    val canAddPollOption: Boolean get() = pollOptions.size < PostDraftValidator.MAX_POLL_OPTIONS
+    val canRemovePollOption: Boolean get() = pollOptions.size > PostDraftValidator.MIN_POLL_OPTIONS
 
     fun toDraft() = PostDraft(
         type = type,
@@ -42,6 +55,11 @@ data class CreatePostUiState(
         overlayText = if (type == PostType.CANVAS) headline.trim().ifEmpty { null } else null,
         caption = caption.trim(),
         location = location.trim().ifEmpty { null },
+        poll = if (type == PostType.POLL) {
+            PollDraft(question = pollQuestion.trim(), options = pollOptions.map { it.trim() }, duration = pollDuration)
+        } else {
+            null
+        },
     )
 
     companion object {
@@ -72,6 +90,18 @@ class CreatePostViewModel @Inject constructor(
     fun onHeadlineChange(text: String) = edit { copy(headline = text) }
     fun onCaptionChange(text: String) = edit { copy(caption = text) }
     fun onLocationChange(text: String) = edit { copy(location = text) }
+    fun onPollQuestionChange(text: String) = edit { copy(pollQuestion = text) }
+    fun onPollDurationChange(duration: PollDuration) = edit { copy(pollDuration = duration) }
+
+    fun onPollOptionChange(index: Int, text: String) = edit {
+        if (index !in pollOptions.indices) this else copy(pollOptions = pollOptions.toMutableList().also { it[index] = text })
+    }
+
+    fun onAddPollOption() = edit { if (canAddPollOption) copy(pollOptions = pollOptions + "") else this }
+
+    fun onRemovePollOption(index: Int) = edit {
+        if (!canRemovePollOption || index !in pollOptions.indices) this else copy(pollOptions = pollOptions.filterIndexed { i, _ -> i != index })
+    }
 
     fun publish() {
         val current = _state.value

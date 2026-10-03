@@ -25,7 +25,7 @@ import io.github.ieswar23.vibely.data.local.entity.UserEntity
         ActivityEntity::class,
         FeedRemoteKeyEntity::class,
     ],
-    version = 1,
+    version = VibelyDatabase.VERSION,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -39,5 +39,8 @@ abstract class VibelyDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "vibely.db"
+
+        /** 1: initial schema. 2: poll columns on `posts` (see [MIGRATION_1_2]). */
+        const val VERSION = 2
     }
 }

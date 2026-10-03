@@ -27,5 +27,12 @@ interface PostRepository {
     /** Optimistically toggles a bookmark, rolled back on failure. */
     suspend fun setBookmarked(postId: String, bookmarked: Boolean): Result<Unit>
 
+    /**
+     * Optimistically records the user's vote: the tally in Room changes immediately and is rolled back
+     * if the API call fails. Fails with [io.github.ieswar23.vibely.domain.PollVoteException] when the
+     * user has already voted or the poll has closed (one vote per user).
+     */
+    suspend fun vote(postId: String, optionIndex: Int): Result<Unit>
+
     suspend fun createPost(draft: PostDraft): Result<Post>
 }

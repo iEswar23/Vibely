@@ -2,9 +2,12 @@ package io.github.ieswar23.vibely.fakes
 
 import androidx.paging.PagingData
 import io.github.ieswar23.vibely.data.repository.PostRepository
+import io.github.ieswar23.vibely.domain.PollTally
 import io.github.ieswar23.vibely.domain.model.HashtagStat
 import io.github.ieswar23.vibely.domain.model.Post
 import io.github.ieswar23.vibely.domain.model.PostDraft
+import io.github.ieswar23.vibely.util.Clock
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -12,7 +15,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
 /** In-memory [PostRepository] that mimics the optimistic update + rollback semantics of the real one. */
-class FakePostRepository(initial: List<Post> = emptyList()) : PostRepository {
+class FakePostRepository(
+    initial: List<Post> = emptyList(),
+    clock: Clock = Clock { TestData.NOW },
+) : PostRepository {
 
     val posts = MutableStateFlow(initial.associateBy { it.id })
     var failNextWrite = false
@@ -20,6 +26,12 @@ class FakePostRepository(initial: List<Post> = emptyList()) : PostRepository {
     val bookmarkCalls = mutableListOf<Pair<String, Boolean>>()
     val createdDrafts = mutableListOf<PostDraft>()
     val refreshedUserPosts = mutableListOf<String>()
+    val voteCalls = mutableListOf<Pair<String, Int>>()
+
+    /** When set, votes suspend after the optimistic write (like a slow network) until it completes. */
+    var pendingVoteResponse: CompletableDeferred<Unit>? = null
+
+    private val pollTally = PollTally(clock)
 
     override fun feed(): Flow<PagingData<Post>> = flowOf(PagingData.empty())
 
@@ -61,6 +73,21 @@ class FakePostRepository(initial: List<Post> = emptyList()) : PostRepository {
         bookmarkCalls += postId to bookmarked
         val before = posts.value[postId] ?: return Result.failure(NoSuchElementException(postId))
         posts.update { it + (postId to before.copy(isBookmarked = bookmarked)) }
+        return if (consumeFailure()) {
+            posts.update { it + (postId to before) }
+            Result.failure(IllegalStateException("network"))
+        } else {
+            Result.success(Unit)
+        }
+    }
+
+    override suspend fun vote(postId: String, optionIndex: Int): Result<Unit> {
+        voteCalls += postId to optionIndex
+        val before = posts.value[postId] ?: return Result.failure(NoSuchElementException(postId))
+        val poll = before.poll ?: return Result.failure(NoSuchElementException(postId))
+        val voted = runCatching { pollTally.castVote(poll, optionIndex) }.getOrElse { return Result.failure(it) }
+        posts.update { it + (postId to before.copy(poll = voted)) }
+        pendingVoteResponse?.await()
         return if (consumeFailure()) {
             posts.update { it + (postId to before) }
             Result.failure(IllegalStateException("network"))

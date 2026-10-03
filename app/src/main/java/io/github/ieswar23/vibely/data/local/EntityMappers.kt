@@ -2,6 +2,8 @@ package io.github.ieswar23.vibely.data.local
 
 import io.github.ieswar23.vibely.data.local.entity.ActivityWithRelations
 import io.github.ieswar23.vibely.data.local.entity.CommentWithAuthor
+import io.github.ieswar23.vibely.data.local.entity.PollEntity
+import io.github.ieswar23.vibely.data.local.entity.PollOptionEntity
 import io.github.ieswar23.vibely.data.local.entity.PostEntity
 import io.github.ieswar23.vibely.data.local.entity.PostWithAuthor
 import io.github.ieswar23.vibely.data.local.entity.StoryWithUser
@@ -10,6 +12,8 @@ import io.github.ieswar23.vibely.data.remote.decodeHashtags
 import io.github.ieswar23.vibely.domain.model.ActivityItem
 import io.github.ieswar23.vibely.domain.model.ActivityType
 import io.github.ieswar23.vibely.domain.model.Comment
+import io.github.ieswar23.vibely.domain.model.Poll
+import io.github.ieswar23.vibely.domain.model.PollOption
 import io.github.ieswar23.vibely.domain.model.Post
 import io.github.ieswar23.vibely.domain.model.PostPreview
 import io.github.ieswar23.vibely.domain.model.PostType
@@ -30,7 +34,11 @@ fun UserEntity.toDomain() = User(
     isCurrentUser = isCurrentUser,
 )
 
-private fun PostEntity.postType() = runCatching { PostType.valueOf(type) }.getOrDefault(PostType.CANVAS)
+private fun PostEntity.postType(): PostType {
+    val parsed = runCatching { PostType.valueOf(type) }.getOrDefault(PostType.CANVAS)
+    // Never hand the UI a poll post without a poll; fall back to showing its caption.
+    return if (parsed == PostType.POLL && poll == null) PostType.TEXT else parsed
+}
 
 /** Returns null when the author has not been cached yet; such rows are skipped by the UI. */
 fun PostWithAuthor.toDomain(): Post? {
@@ -50,8 +58,23 @@ fun PostWithAuthor.toDomain(): Post? {
         isLiked = post.isLiked,
         isBookmarked = post.isBookmarked,
         createdAt = post.createdAt,
+        poll = post.poll?.toDomain(),
     )
 }
+
+fun PollEntity.toDomain() = Poll(
+    question = question,
+    options = options.map { PollOption(text = it.text, voteCount = it.votes) },
+    endsAt = endsAt,
+    votedOptionIndex = votedOption,
+)
+
+fun Poll.toEntity() = PollEntity(
+    question = question,
+    options = options.map { PollOptionEntity(text = it.text, votes = it.voteCount) },
+    endsAt = endsAt,
+    votedOption = votedOptionIndex,
+)
 
 fun List<PostWithAuthor>.toDomainPosts(): List<Post> = mapNotNull { it.toDomain() }
 

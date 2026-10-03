@@ -19,8 +19,9 @@ import kotlin.random.Random
 /**
  * A tiny in-process "backend". It routes Retrofit requests to JSON fixtures in `assets/api`,
  * paginates the feed, echoes created resources and adds 300–700 ms of latency so loading states
- * are real. Fixture timestamps are written as `"@ago:<minutes>m"` and rendered relative to the
- * request time, so the seed data always looks fresh.
+ * are real. Fixture timestamps are written as `"@ago:<minutes>m"` (or `"@in:<minutes>m"` for future
+ * times such as poll deadlines) and rendered relative to the request time, so the seed data always
+ * looks fresh.
  */
 class MockInterceptor(
     private val assets: AssetSource,
@@ -114,7 +115,22 @@ class MockInterceptor(
         body.addProperty("likeCount", 0)
         body.addProperty("commentCount", 0)
         body.addProperty("createdAt", clock.now())
+        body.get("poll")?.takeIf { it.isJsonObject }?.let { body.add("poll", createdPoll(it.asJsonObject)) }
         return gson.toJson(body)
+    }
+
+    /** Turns a `{question, options: [String], durationDays}` request into the server's poll shape. */
+    private fun createdPoll(request: JsonObject): JsonObject = JsonObject().apply {
+        addProperty("question", request["question"].asString)
+        add(
+            "options",
+            JsonArray().apply {
+                request["options"].asJsonArray.forEach { option ->
+                    add(JsonObject().apply { addProperty("text", option.asString); addProperty("votes", 0) })
+                }
+            },
+        )
+        addProperty("endsAt", clock.now() + request["durationDays"].asLong * DAY_MS)
     }
 
     private fun createComment(postId: String, request: Request): String {
@@ -139,8 +155,9 @@ class MockInterceptor(
         val raw = synchronized(cache) { cache.getOrPut(name) { assets.read(name) } }
         val now = clock.now()
         return RELATIVE_TIME.replace(raw) { match ->
-            val minutes = match.groupValues[1].toLong()
-            (now - minutes * 60_000L).toString()
+            val minutes = match.groupValues[2].toLong()
+            val offset = minutes * 60_000L
+            (if (match.groupValues[1] == "in") now + offset else now - offset).toString()
         }
     }
 
@@ -165,6 +182,7 @@ class MockInterceptor(
         private const val DEFAULT_LIMIT = 10
         private const val SUCCESS = """{"success":true,"message":null}"""
         private val JSON = "application/json".toMediaType()
-        private val RELATIVE_TIME = Regex("\"@ago:(\\d+)m\"")
+        private const val DAY_MS = 24 * 60 * 60_000L
+        private val RELATIVE_TIME = Regex("\"@(ago|in):(\\d+)m\"")
     }
 }

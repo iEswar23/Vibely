@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.ieswar23.vibely.data.repository.PostRepository
+import io.github.ieswar23.vibely.domain.PollVoteException
 import io.github.ieswar23.vibely.domain.model.Post
 import io.github.ieswar23.vibely.ui.navigation.Routes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,6 +57,15 @@ class PostDetailViewModel @Inject constructor(
 
     fun onDoubleTapLike(post: Post) {
         if (!post.isLiked) setLiked(post, true)
+    }
+
+    fun onVote(post: Post, optionIndex: Int) {
+        if (post.poll == null || post.poll.votedOptionIndex != null) return
+        viewModelScope.launch {
+            postRepository.vote(post.id, optionIndex).onFailure { error ->
+                _messages.send((error as? PollVoteException)?.message ?: "Couldn't save your vote")
+            }
+        }
     }
 
     fun onBookmarkClick(post: Post) {

@@ -30,6 +30,21 @@ data class PostDto(
     val likeCount: Int?,
     val commentCount: Int?,
     val createdAt: Long,
+    /** Only present on `"type": "POLL"` posts. */
+    val poll: PollDto? = null,
+)
+
+data class PollDto(
+    val question: String?,
+    val options: List<PollOptionDto>?,
+    val endsAt: Long?,
+    /** Index of the option the requesting user voted for, if any. */
+    val votedOption: Int?,
+)
+
+data class PollOptionDto(
+    val text: String?,
+    val votes: Int?,
 )
 
 data class FeedPageDto(
@@ -80,7 +95,16 @@ data class CreatePostRequest(
     val overlayText: String?,
     val caption: String,
     val location: String?,
+    val poll: CreatePollRequest? = null,
 )
+
+data class CreatePollRequest(
+    val question: String,
+    val options: List<String>,
+    val durationDays: Int,
+)
+
+data class PollVoteRequest(val optionIndex: Int)
 
 data class CreateCommentRequest(val text: String)
 

@@ -3,13 +3,17 @@ package io.github.ieswar23.vibely.ui.common
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.FormatQuote
+import androidx.compose.material.icons.rounded.Poll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -131,6 +136,52 @@ fun TextPostTile(caption: String, modifier: Modifier = Modifier, compact: Boolea
     }
 }
 
+/** Grid tile for a poll post: the question above a few faux result bars. */
+@Composable
+fun PollPostTile(question: String, modifier: Modifier = Modifier, compact: Boolean = false) {
+    Box(
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentAlignment = if (compact) Alignment.Center else Alignment.TopStart,
+    ) {
+        if (compact) {
+            Icon(
+                imageVector = Icons.Rounded.Poll,
+                contentDescription = "Poll",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp),
+            )
+        } else {
+            Column(Modifier.padding(10.dp)) {
+                Icon(
+                    imageVector = Icons.Rounded.Poll,
+                    contentDescription = "Poll",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = question,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(6.dp))
+                listOf(0.8f, 0.55f, 0.3f).forEach { fraction ->
+                    Box(
+                        Modifier
+                            .padding(top = 4.dp)
+                            .fillMaxWidth(fraction)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+                    )
+                }
+            }
+        }
+    }
+}
+
 /** Square thumbnail for grids and activity rows. */
 @Composable
 fun PostThumbnail(
@@ -151,6 +202,7 @@ fun PostThumbnail(
             modifier = modifier,
         )
         PostType.TEXT -> TextPostTile(caption = caption, modifier = modifier, compact = compact)
+        PostType.POLL -> PollPostTile(question = caption, modifier = modifier, compact = compact)
     }
 }
 

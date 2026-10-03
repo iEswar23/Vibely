@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.ieswar23.vibely.data.local.ALL_MIGRATIONS
 import io.github.ieswar23.vibely.data.local.VibelyDatabase
 import io.github.ieswar23.vibely.data.local.dao.ActivityDao
 import io.github.ieswar23.vibely.data.local.dao.CommentDao
@@ -24,6 +25,8 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): VibelyDatabase =
         Room.databaseBuilder(context, VibelyDatabase::class.java, VibelyDatabase.NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            // Everything is re-downloadable from the API, so a missing migration path just resets the cache.
             .fallbackToDestructiveMigration()
             .build()
 

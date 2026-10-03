@@ -41,6 +41,22 @@ data class PostEntity(
     val isBookmarked: Boolean,
     val bookmarkedAt: Long?,
     val createdAt: Long,
+    /** Poll columns (`poll_question`, `poll_options`, ...); all NULL for non-poll posts. Added in DB version 2. */
+    @Embedded(prefix = "poll_") val poll: PollEntity? = null,
+)
+
+data class PollEntity(
+    val question: String,
+    /** Options and their vote counts, serialised as JSON via [io.github.ieswar23.vibely.data.local.Converters]. */
+    val options: List<PollOptionEntity>,
+    val endsAt: Long,
+    /** Option the current user voted for; null until they vote. */
+    val votedOption: Int?,
+)
+
+data class PollOptionEntity(
+    val text: String,
+    val votes: Int,
 )
 
 data class PostWithAuthor(

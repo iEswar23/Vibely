@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import io.github.ieswar23.vibely.data.local.entity.PollOptionEntity
 import io.github.ieswar23.vibely.data.local.entity.PostEntity
 import io.github.ieswar23.vibely.data.local.entity.PostWithAuthor
 import kotlinx.coroutines.flow.Flow
@@ -69,4 +70,8 @@ interface PostDao {
 
     @Query("UPDATE posts SET commentCount = MAX(0, commentCount + :delta) WHERE id = :id")
     suspend fun adjustCommentCount(id: String, delta: Int)
+
+    /** Writes a poll's tallies and the user's vote (or clears it again on rollback). */
+    @Query("UPDATE posts SET poll_options = :options, poll_votedOption = :votedOption WHERE id = :id AND poll_question IS NOT NULL")
+    suspend fun updatePollVote(id: String, options: List<PollOptionEntity>, votedOption: Int?)
 }

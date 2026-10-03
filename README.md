@@ -1,6 +1,6 @@
 # Vibely
 
-**Share the moments that matter.** Vibely is an offline-first social app for Android: a paged home feed with stories, likes, comments, saves and follows, built with Jetpack Compose and a modern MVVM architecture.
+**Share the moments that matter.** Vibely is an offline-first social app for Android: a paged home feed with stories, polls, likes, comments, saves and follows, built with Jetpack Compose and a modern MVVM architecture.
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
@@ -19,7 +19,8 @@ Every post is a "canvas" (a gradient background, a big emoji and a headline) or 
 - **Rich captions**: `#hashtags` and `@mentions` are parsed, styled in the brand colour and clickable (`AnnotatedString` + `LinkAnnotation`). They open the hashtag page or the person's profile.
 - **Stories**: a full-screen viewer with segmented progress bars that advance on their own. Tap left or right to move, press and hold to pause, swipe down to close. Viewed stories get a grey ring and move to the end of the row.
 - **Comments**: the caption header, a comment list with likes and "Reply", quick emoji reactions and an input that sits above the keyboard.
-- **Create post**: pick a Canvas or Text post, a gradient, an emoji, an optional headline, a caption and a location, with a live preview. Validation covers caption length, a hashtag limit and headline/location length. Publishing goes through the API and puts the post at the top of the feed.
+- **Create post**: pick a Canvas, Text or Poll post, a gradient, an emoji, an optional headline, a caption and a location, with a live preview. Validation covers caption length, a hashtag limit and headline/location length. Publishing goes through the API and puts the post at the top of the feed.
+- **Polls**: ask a question with 2–4 options (add or remove them as you go) that runs for 1, 3 or 7 days. The composer checks for a question, blank or duplicate options and length limits, and previews the poll live. In the feed you tap an option to vote; after voting, or once the poll closes, the options turn into animated percentage bars with your pick ticked, the total vote count and "5 days left" or "Final results". Votes are optimistic like likes (written to Room first, rolled back if the API call fails) and limited to one per user. The maths lives in a pure `PollTally`: largest-remainder percentages that always add up to 100, zero-vote polls and expiry through an injected `Clock`.
 - **Explore**: trending hashtag chips, a popular-posts grid (`LazyVerticalGrid`) and debounced search across people and hashtags.
 - **Profiles**: your own profile and other people's, with post/follower/following counts (animated), bio, website, follow and unfollow, edit profile (validated, with a unique-username check), and Posts / Saved tabs.
 - **Activity**: likes, comments, follows and mentions grouped into *Today*, *This week* and *Earlier* with sticky headers. Unread items are highlighted and the bottom-nav badge clears once you've seen them. Also has "Follow back" and "Suggested for you".
@@ -63,6 +64,8 @@ The home feed works like this: `Pager(remoteMediator = FeedRemoteMediator, pagin
 
 Optimistic updates follow one pattern everywhere: update Room → call the API → if the call fails, revert Room and return `Result.failure`. The ViewModel then shows a snackbar.
 
+Schema changes ship as explicit Room `Migration`s. Version 2 adds polls as nullable `poll_*` columns on `posts` (an `@Embedded` `PollEntity`), so cached likes, saves and your own posts survive the upgrade. A destructive fallback stays in place for any missing path, because everything can be downloaded again.
+
 ## Package structure
 
 ```
@@ -76,12 +79,13 @@ io.github.ieswar23.vibely
 │   └── sync           # FeedSyncWorker (WorkManager)
 ├── di                 # Hilt modules (database, network, repositories, app)
 ├── domain
-│   ├── model          # Post, User, Story, Comment, ActivityItem, PostDraft, ...
+│   ├── model          # Post, Poll, User, Story, Comment, ActivityItem, PostDraft, ...
+│   ├── PollTally.kt   # Poll percentages, expiry and one-vote rules
 │   └── PostDraftValidator.kt
 ├── ui
 │   ├── activity       # Activity / notifications
 │   ├── comments       # Comments screen
-│   ├── common         # PostCard, PostCanvas, avatars, rich text, shimmer, buttons
+│   ├── common         # PostCard, PollCard, PostCanvas, avatars, rich text, shimmer, buttons
 │   ├── create         # Create post
 │   ├── explore        # Explore, search, hashtag page
 │   ├── feed           # Home feed + stories row
@@ -108,7 +112,7 @@ From the command line:
 ./gradlew assembleDebug
 ```
 
-You don't need API keys, Firebase or a network connection. The seed data (25 users, 120 posts, about 530 comments, stories and activity) ships in `app/src/main/assets/api`.
+You don't need API keys, Firebase or a network connection. The seed data (25 users, 122 posts including two polls, about 540 comments, stories and activity) ships in `app/src/main/assets/api`.
 
 ## Testing
 
@@ -121,10 +125,14 @@ The unit tests cover:
 - `TimeAgoTest`: compact and long relative times, date fallbacks and Today / This week buckets
 - `TextTokenParserTest`: hashtag and mention parsing edge cases (emails, trailing dots, numeric tags)
 - `CountFormatterTest`: 4,210 / 48.2K / 1.2M formatting
-- `FeedViewModelTest`: like/unlike, double-tap semantics, rollback on failure, bookmark undo
+- `PollTallyTest`: largest-remainder percentages that always sum to 100, ties, zero votes, one vote per user, expiry and "x days left" labels with an injected clock
+- `FeedViewModelTest`: like/unlike, double-tap semantics, rollback on failure, bookmark undo, optimistic poll votes with rollback, and the one-vote rule
 - `ProfileViewModelTest`: follow/unfollow counts, failure rollback, "me" and "@mention" resolution
-- `CreatePostViewModelTest` and `PostDraftValidatorTest`: publish validation rules and draft mapping
-- `MockInterceptorTest`: feed pagination, relative timestamp rendering, echoing created posts
+- `CreatePostViewModelTest` and `PostDraftValidatorTest`: publish validation rules and draft mapping, including poll questions, blank, duplicate and too-long options, and adding or removing options
+- `PostRepositoryPollTest` (Robolectric): the real repository against in-memory Room and the mock API. The vote is in Room before the API answers, a failed call rolls it back, and a second vote never reaches the API
+- `DatabaseMigrationTest` (Robolectric): upgrades a real version 1 database file and lets Room validate the migrated schema
+- `PollMappersTest`: poll DTO → entity → domain mapping and fallbacks for malformed polls
+- `MockInterceptorTest`: feed pagination, relative (past and future) timestamp rendering, echoing created posts and polls
 
 ### Screenshot tests
 
@@ -151,6 +159,8 @@ A plain `./gradlew testDebugUnitTest` still runs these flows as smoke tests, but
   </tr>
   <tr>
     <td align="center"><img src="docs/screenshots/07_home_feed_dark.png" width="250" alt="Home feed in dark theme"/><br/><sub>Feed in dark theme</sub></td>
+    <td align="center"><img src="docs/screenshots/08_poll_feed.png" width="250" alt="Poll results in the feed"/><br/><sub>Poll results after voting</sub></td>
+    <td align="center"><img src="docs/screenshots/09_create_poll.png" width="250" alt="Creating a poll"/><br/><sub>Create a poll</sub></td>
   </tr>
 </table>
 

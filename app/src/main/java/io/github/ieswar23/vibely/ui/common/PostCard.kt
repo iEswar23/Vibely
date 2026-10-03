@@ -74,6 +74,8 @@ data class PostActions(
     val onAuthorClick: (Post) -> Unit,
     val onHashtagClick: (String) -> Unit,
     val onMentionClick: (String) -> Unit,
+    /** Vote in the post's poll; the argument is the option index. */
+    val onVote: (Post, Int) -> Unit,
 )
 
 @Composable
@@ -142,6 +144,14 @@ fun PostCard(
                 )
                 HeartBurst(trigger = burstTrigger, size = 88.dp)
             }
+            PostType.POLL -> post.poll?.let { poll ->
+                // No double-tap-to-like here: taps on a poll are votes.
+                PollCard(
+                    poll = poll,
+                    onVote = { index -> actions.onVote(post, index) },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
         }
 
         PostActionRow(
@@ -158,7 +168,8 @@ fun PostCard(
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            if (post.type == PostType.CANVAS && post.caption.isNotBlank()) {
+            // Text posts already show their caption as the post body.
+            if (post.type != PostType.TEXT && post.caption.isNotBlank()) {
                 Spacer(Modifier.height(4.dp))
                 ExpandableCaption(post = post, actions = actions)
             }

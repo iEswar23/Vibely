@@ -13,7 +13,7 @@ data class User(
     val isCurrentUser: Boolean,
 )
 
-enum class PostType { CANVAS, TEXT }
+enum class PostType { CANVAS, TEXT, POLL }
 
 data class Post(
     val id: String,
@@ -31,6 +31,36 @@ data class Post(
     val isLiked: Boolean,
     val isBookmarked: Boolean,
     val createdAt: Long,
+    /** Present only for [PostType.POLL] posts. */
+    val poll: Poll? = null,
+)
+
+data class PollOption(
+    val text: String,
+    /** Total votes for this option, including the current user's vote if they picked it. */
+    val voteCount: Int,
+)
+
+data class Poll(
+    val question: String,
+    val options: List<PollOption>,
+    /** Epoch millis after which voting closes and final results are shown. */
+    val endsAt: Long,
+    /** Index into [options] the current user voted for, or null if they haven't voted. */
+    val votedOptionIndex: Int?,
+)
+
+enum class PollDuration(val days: Int, val label: String) {
+    ONE_DAY(1, "1 day"),
+    THREE_DAYS(3, "3 days"),
+    SEVEN_DAYS(7, "7 days"),
+}
+
+/** The poll part of a [PostDraft]. */
+data class PollDraft(
+    val question: String,
+    val options: List<String>,
+    val duration: PollDuration,
 )
 
 data class StoryFrame(
@@ -88,6 +118,8 @@ data class PostDraft(
     val overlayText: String?,
     val caption: String,
     val location: String?,
+    /** Required for [PostType.POLL] drafts, ignored otherwise. */
+    val poll: PollDraft? = null,
 )
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }

@@ -1558,5 +1558,77 @@
   "likeCount": 198,
   "createdAt": "@ago:64320m",
   "commentCount": 1
+ },
+ {
+  "id": "p121",
+  "authorId": "u21",
+  "type": "POLL",
+  "gradient": null,
+  "emoji": null,
+  "overlayText": null,
+  "caption": "Monsoon is finally here and my kitchen window is all fogged up. Settle this for tomorrow's reel 👇",
+  "location": "Mumbai, India",
+  "likeCount": 243,
+  "createdAt": "@ago:2400m",
+  "commentCount": 3,
+  "poll": {
+   "question": "What's the ultimate monsoon snack?",
+   "options": [
+    {
+     "text": "Pakoras with chai",
+     "votes": 412
+    },
+    {
+     "text": "Vada pav",
+     "votes": 356
+    },
+    {
+     "text": "Roasted bhutta",
+     "votes": 189
+    },
+    {
+     "text": "Maggi at a hill stop",
+     "votes": 97
+    }
+   ],
+   "endsAt": "@in:7680m",
+   "votedOption": null
+  }
+ },
+ {
+  "id": "p122",
+  "authorId": "u04",
+  "type": "POLL",
+  "gradient": null,
+  "emoji": null,
+  "overlayText": null,
+  "caption": "Collecting data for my talk on browser memory at the Bengaluru Android meetup. Be honest!",
+  "location": null,
+  "likeCount": 377,
+  "createdAt": "@ago:9000m",
+  "commentCount": 2,
+  "poll": {
+   "question": "How many browser tabs do you have open right now?",
+   "options": [
+    {
+     "text": "Under 10",
+     "votes": 318
+    },
+    {
+     "text": "10 to 30",
+     "votes": 541
+    },
+    {
+     "text": "30 to 100",
+     "votes": 276
+    },
+    {
+     "text": "I've lost count",
+     "votes": 402
+    }
+   ],
+   "endsAt": "@ago:4680m",
+   "votedOption": null
+  }
  }
 ]

@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.ieswar23.vibely.data.repository.PostRepository
 import io.github.ieswar23.vibely.data.repository.StoryRepository
 import io.github.ieswar23.vibely.data.repository.UserRepository
+import io.github.ieswar23.vibely.domain.PollVoteException
 import io.github.ieswar23.vibely.domain.model.Post
 import io.github.ieswar23.vibely.domain.model.Story
 import io.github.ieswar23.vibely.domain.model.User
@@ -82,6 +83,18 @@ class FeedViewModel @Inject constructor(
         viewModelScope.launch {
             postRepository.setLiked(post.id, liked)
                 .onFailure { _events.send(FeedEvent.Message("Couldn't update like. Please try again.")) }
+        }
+    }
+
+    /** One vote per user: taps on a poll you've already voted in are ignored. */
+    fun onVote(post: Post, optionIndex: Int) {
+        if (post.poll == null || post.poll.votedOptionIndex != null) return
+        viewModelScope.launch {
+            postRepository.vote(post.id, optionIndex)
+                .onFailure { error ->
+                    val message = (error as? PollVoteException)?.message ?: "Couldn't save your vote. Please try again."
+                    _events.send(FeedEvent.Message(message))
+                }
         }
     }
 

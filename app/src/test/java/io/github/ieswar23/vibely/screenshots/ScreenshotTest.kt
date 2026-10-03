@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import com.github.takahirom.roborazzi.RoborazziOptions
@@ -114,6 +115,40 @@ class ScreenshotTest {
         capture("07_home_feed_dark")
     }
 
+    @Test
+    fun pollFeed() {
+        awaitHomeFeed()
+        // The seeded monsoon-snack poll sits right after the first six posts (index 0 is the stories row).
+        composeRule.onAllNodes(hasScrollToIndexAction())[0].performScrollToIndex(POLL_LIST_INDEX)
+        settle()
+        composeRule.onNodeWithText(POLL_CHOICE).performClick()
+        // The optimistic vote lands in Room, Paging re-emits and the card flips to animated results.
+        composeRule.waitUntil(TIMEOUT) { composeRule.onAllNodesWithText(POLL_TOTAL_AFTER_VOTE, substring = true).exists() }
+        settle()
+        capture("08_poll_feed")
+    }
+
+    @Test
+    fun createPoll() {
+        awaitHomeFeed()
+        composeRule.onNodeWithContentDescription("Create").performClick()
+        composeRule.waitUntil(TIMEOUT) { composeRule.onAllNodesWithText("New post").exists() }
+        settle()
+        composeRule.onNodeWithText("Poll").performClick()
+        settle()
+        // Text fields in poll mode: question, the options, caption, location.
+        composeRule.onAllNodes(hasSetTextAction())[0].performTextInput("Where should this weekend's monsoon trek be?")
+        composeRule.onAllNodes(hasSetTextAction())[1].performTextInput("Rajmachi Fort")
+        composeRule.onAllNodes(hasSetTextAction())[2].performTextInput("Kalsubai Peak")
+        composeRule.onNodeWithText("3 days").performScrollTo().performClick()
+        composeRule.onNodeWithText("Add option").performScrollTo().performClick()
+        settle()
+        composeRule.onAllNodes(hasSetTextAction())[3].performTextInput("Lohagad & Visapur")
+        composeRule.onNodeWithText("Canvas").performScrollTo()
+        settle()
+        capture("09_create_poll")
+    }
+
     /** Waits until both the stories row and the first feed page have come back from the mock API. */
     private fun awaitHomeFeed() {
         composeRule.waitUntil(TIMEOUT) {
@@ -161,5 +196,8 @@ class ScreenshotTest {
         const val TIMEOUT = 20_000L
         const val STORY_USERNAME = "meera.eats"
         const val STORY_TEXT = "Coffee #3 today"
+        const val POLL_LIST_INDEX = 7
+        const val POLL_CHOICE = "Pakoras with chai"
+        const val POLL_TOTAL_AFTER_VOTE = "1,055 votes"
     }
 }

@@ -34,14 +34,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Poll
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +57,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -69,12 +74,18 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.ieswar23.vibely.domain.PostDraftValidator
+import io.github.ieswar23.vibely.domain.model.Poll
+import io.github.ieswar23.vibely.domain.model.PollDuration
+import io.github.ieswar23.vibely.domain.model.PollOption
 import io.github.ieswar23.vibely.domain.model.PostType
 import io.github.ieswar23.vibely.ui.common.GradientButton
+import io.github.ieswar23.vibely.ui.common.LocalNow
+import io.github.ieswar23.vibely.ui.common.PollCard
 import io.github.ieswar23.vibely.ui.common.PostCanvas
 import io.github.ieswar23.vibely.ui.common.rememberRichText
 import io.github.ieswar23.vibely.ui.theme.CanvasGradients
 import io.github.ieswar23.vibely.util.CountFormatter
+import io.github.ieswar23.vibely.util.TimeAgo
 
 private val EmojiChoices = listOf(
     "✨", "🌅", "🏔️", "🏝️", "🌸", "🌧️", "🌙", "🍜", "☕", "🍰", "🥗", "🍕",
@@ -144,18 +155,39 @@ fun CreatePostScreen(
                 SegmentedButton(
                     selected = state.type == PostType.CANVAS,
                     onClick = { viewModel.onTypeChange(PostType.CANVAS) },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
+                    shape = SegmentedButtonDefaults.itemShape(0, 3),
                     icon = { Icon(Icons.Rounded.Palette, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 ) { Text("Canvas") }
                 SegmentedButton(
                     selected = state.type == PostType.TEXT,
                     onClick = { viewModel.onTypeChange(PostType.TEXT) },
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
+                    shape = SegmentedButtonDefaults.itemShape(1, 3),
                     icon = { Icon(Icons.Rounded.TextFields, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 ) { Text("Text") }
+                SegmentedButton(
+                    selected = state.type == PostType.POLL,
+                    onClick = { viewModel.onTypeChange(PostType.POLL) },
+                    shape = SegmentedButtonDefaults.itemShape(2, 3),
+                    icon = { Icon(Icons.Rounded.Poll, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                ) { Text("Poll") }
             }
 
             PreviewCard(state = state)
+
+            AnimatedVisibility(
+                visible = state.type == PostType.POLL,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                PollEditor(
+                    state = state,
+                    onQuestionChange = viewModel::onPollQuestionChange,
+                    onOptionChange = viewModel::onPollOptionChange,
+                    onAddOption = viewModel::onAddPollOption,
+                    onRemoveOption = viewModel::onRemovePollOption,
+                    onDurationChange = viewModel::onPollDurationChange,
+                )
+            }
 
             AnimatedVisibility(
                 visible = state.type == PostType.CANVAS,
@@ -235,7 +267,15 @@ fun CreatePostScreen(
             OutlinedTextField(
                 value = state.caption,
                 onValueChange = viewModel::onCaptionChange,
-                label = { Text(if (state.type == PostType.TEXT) "What's on your mind?" else "Write a caption…") },
+                label = {
+                    Text(
+                        when (state.type) {
+                            PostType.TEXT -> "What's on your mind?"
+                            PostType.POLL -> "Add some context (optional)"
+                            PostType.CANVAS -> "Write a caption…"
+                        },
+                    )
+                },
                 minLines = 3,
                 maxLines = 8,
                 isError = state.showErrors && state.validation.captionError != null,
@@ -340,8 +380,113 @@ private fun PreviewCard(state: CreatePostUiState) {
                         )
                     }
                 }
+                PostType.POLL -> PollCard(poll = previewPoll(state, LocalNow.current), onVote = null)
             }
         }
+    }
+}
+
+/** What the poll will look like in the feed, with placeholders for fields that are still empty. */
+private fun previewPoll(state: CreatePostUiState, now: Long) = Poll(
+    question = state.pollQuestion.trim().ifEmpty { "Ask your followers something…" },
+    options = state.pollOptions.mapIndexed { index, option ->
+        PollOption(text = option.trim().ifEmpty { "Option ${index + 1}" }, voteCount = 0)
+    },
+    endsAt = now + state.pollDuration.days * TimeAgo.DAY,
+    votedOptionIndex = null,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PollEditor(
+    state: CreatePostUiState,
+    onQuestionChange: (String) -> Unit,
+    onOptionChange: (Int, String) -> Unit,
+    onAddOption: () -> Unit,
+    onRemoveOption: (Int) -> Unit,
+    onDurationChange: (PollDuration) -> Unit,
+) {
+    Column {
+        OutlinedTextField(
+            value = state.pollQuestion,
+            onValueChange = onQuestionChange,
+            label = { Text("Question") },
+            maxLines = 3,
+            isError = state.showErrors && state.validation.pollQuestionError != null,
+            supportingText = {
+                val error = state.validation.pollQuestionError
+                Text(
+                    if (state.showErrors && error != null) {
+                        error
+                    } else {
+                        "${state.pollQuestion.trim().length}/${PostDraftValidator.MAX_POLL_QUESTION_LENGTH}"
+                    },
+                )
+            },
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp),
+        )
+
+        state.pollOptions.forEachIndexed { index, option ->
+            val error = state.validation.pollOptionErrors.getOrNull(index)?.takeIf { state.showErrors }
+            OutlinedTextField(
+                value = option,
+                onValueChange = { onOptionChange(index, it) },
+                label = { Text("Option ${index + 1}") },
+                singleLine = true,
+                isError = error != null,
+                supportingText = error?.let { message -> { Text(message) } },
+                trailingIcon = if (state.canRemovePollOption) {
+                    {
+                        IconButton(onClick = { onRemoveOption(index) }) {
+                            Icon(Icons.Rounded.RemoveCircleOutline, contentDescription = "Remove option ${index + 1}")
+                        }
+                    }
+                } else {
+                    null
+                },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 4.dp),
+            )
+        }
+
+        if (state.canAddPollOption) {
+            TextButton(
+                onClick = onAddOption,
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp),
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Add option")
+            }
+        }
+
+        FieldLabel("Poll length")
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            PollDuration.entries.forEach { duration ->
+                val selected = duration == state.pollDuration
+                FilterChip(
+                    selected = selected,
+                    onClick = { onDurationChange(duration) },
+                    label = { Text(duration.label) },
+                    leadingIcon = if (selected) {
+                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
     }
 }
 

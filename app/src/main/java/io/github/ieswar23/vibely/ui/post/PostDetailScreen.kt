@@ -61,6 +61,7 @@ fun PostDetailScreen(
             onAuthorClick = { navigator.profile(it.author.id) },
             onHashtagClick = navigator::hashtag,
             onMentionClick = navigator::mention,
+            onVote = viewModel::onVote,
         )
     }
 

@@ -13,16 +13,21 @@ import io.github.ieswar23.vibely.data.local.dao.PostDao
 import io.github.ieswar23.vibely.data.local.dao.UserDao
 import io.github.ieswar23.vibely.data.local.toDomain
 import io.github.ieswar23.vibely.data.local.toDomainPosts
+import io.github.ieswar23.vibely.data.local.toEntity
 import io.github.ieswar23.vibely.data.paging.FeedCacheWriter
 import io.github.ieswar23.vibely.data.paging.FeedRemoteMediator
 import io.github.ieswar23.vibely.data.remote.VibelyApi
 import io.github.ieswar23.vibely.data.remote.decodeHashtags
+import io.github.ieswar23.vibely.data.remote.dto.CreatePollRequest
 import io.github.ieswar23.vibely.data.remote.dto.CreatePostRequest
+import io.github.ieswar23.vibely.data.remote.dto.PollVoteRequest
 import io.github.ieswar23.vibely.data.remote.toEntity
 import io.github.ieswar23.vibely.di.IoDispatcher
+import io.github.ieswar23.vibely.domain.PollTally
 import io.github.ieswar23.vibely.domain.model.HashtagStat
 import io.github.ieswar23.vibely.domain.model.Post
 import io.github.ieswar23.vibely.domain.model.PostDraft
+import io.github.ieswar23.vibely.domain.model.PostType
 import io.github.ieswar23.vibely.util.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -42,6 +47,8 @@ class PostRepositoryImpl @Inject constructor(
     private val clock: Clock,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : PostRepository {
+
+    private val pollTally = PollTally(clock)
 
     @OptIn(ExperimentalPagingApi::class)
     override fun feed(): Flow<PagingData<Post>> = Pager(
@@ -121,6 +128,22 @@ class PostRepositoryImpl @Inject constructor(
         }.onFailure { postDao.updateBookmark(postId, current.isBookmarked, current.bookmarkedAt) }
     }
 
+    override suspend fun vote(postId: String, optionIndex: Int): Result<Unit> = withContext(io) {
+        // Read, check and write in one transaction so a double tap can never count two votes.
+        val before = runCatchingNonCancellation {
+            database.withTransaction {
+                val poll = postDao.getPost(postId)?.poll ?: throw NoSuchElementException(postId)
+                val voted = pollTally.castVote(poll.toDomain(), optionIndex).toEntity()
+                postDao.updatePollVote(postId, voted.options, voted.votedOption)
+                poll
+            }
+        }.getOrElse { return@withContext Result.failure(it) }
+        runCatchingNonCancellation {
+            val response = api.votePoll(postId, PollVoteRequest(optionIndex))
+            check(response.success) { response.message ?: "Couldn't save your vote" }
+        }.onFailure { postDao.updatePollVote(postId, before.options, before.votedOption) }
+    }
+
     override suspend fun createPost(draft: PostDraft): Result<Post> = withContext(io) {
         runCatchingNonCancellation {
             val created = api.createPost(
@@ -131,6 +154,13 @@ class PostRepositoryImpl @Inject constructor(
                     overlayText = draft.overlayText?.takeIf { it.isNotBlank() },
                     caption = draft.caption,
                     location = draft.location?.takeIf { it.isNotBlank() },
+                    poll = draft.poll?.takeIf { draft.type == PostType.POLL }?.let { poll ->
+                        CreatePollRequest(
+                            question = poll.question.trim(),
+                            options = poll.options.map { it.trim() },
+                            durationDays = poll.duration.days,
+                        )
+                    },
                 ),
             )
             database.withTransaction {

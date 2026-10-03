@@ -6,6 +6,7 @@ import io.github.ieswar23.vibely.data.remote.dto.CommentDto
 import io.github.ieswar23.vibely.data.remote.dto.CreateCommentRequest
 import io.github.ieswar23.vibely.data.remote.dto.CreatePostRequest
 import io.github.ieswar23.vibely.data.remote.dto.FeedPageDto
+import io.github.ieswar23.vibely.data.remote.dto.PollVoteRequest
 import io.github.ieswar23.vibely.data.remote.dto.PostDto
 import io.github.ieswar23.vibely.data.remote.dto.StoryDto
 import io.github.ieswar23.vibely.data.remote.dto.UserDto
@@ -48,6 +49,10 @@ interface VibelyApi {
 
     @DELETE("posts/{id}/like")
     suspend fun unlikePost(@Path("id") postId: String): ActionResponseDto
+
+    /** One vote per user; the server rejects a second vote or a vote on a closed poll. */
+    @POST("posts/{id}/vote")
+    suspend fun votePoll(@Path("id") postId: String, @Body request: PollVoteRequest): ActionResponseDto
 
     @POST("posts/{id}/bookmark")
     suspend fun bookmarkPost(@Path("id") postId: String): ActionResponseDto
