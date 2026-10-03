@@ -2,6 +2,7 @@
 
 **Share the moments that matter.** Vibely is an offline-first social app for Android: a paged home feed with stories, polls, likes, comments, saves and follows, built with Jetpack Compose and a modern MVVM architecture.
 
+[![Android CI](https://github.com/iEswar23/Vibely/actions/workflows/android-ci.yml/badge.svg)](https://github.com/iEswar23/Vibely/actions/workflows/android-ci.yml)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-MVVM-8B5CF6)
